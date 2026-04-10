@@ -54,4 +54,4 @@ college-resource-platform/
     └── style.css      → Styles
 
 ## 👨‍💻 Author
-Your Name — B.Tech CSE, 2nd Year
+Roshit Goyal — B.Tech CSE, 2nd Year
