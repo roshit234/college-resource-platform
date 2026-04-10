@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Upload Resource | College Resources</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <nav class="navbar">
+    <h1>🎓 College Resources</h1>
+    <div>
+      <a href="index.html">Home</a>
+      <a href="#" onclick="logout()">Logout</a>
+    </div>
+  </nav>
+
+  <div class="upload-card">
+    <h2>📤 Upload Resource</h2>
+
+    <div class="message" id="msg"></div>
+
+    <div class="form-group">
+      <label>Title</label>
+      <input type="text" id="title" placeholder="e.g. Maths Notes Chapter 3" />
+    </div>
+
+    <div class="form-group">
+      <label>Subject</label>
+      <input type="text" id="subject" placeholder="e.g. Mathematics, Physics" />
+    </div>
+
+    <div class="form-group">
+      <label>Description (optional)</label>
+      <textarea id="description" rows="3"
+        placeholder="Brief description of the resource..."></textarea>
+    </div>
+
+    <div class="form-group">
+      <label>Select File (PDF, PPT, DOC, max 10MB)</label>
+      <input type="file" id="file"
+        accept=".pdf,.ppt,.pptx,.doc,.docx,.txt" />
+    </div>
+
+    <button class="btn" onclick="uploadResource()">Upload Resource</button>
+  </div>
+
+  <script>
+    // Redirect to login if not logged in
+    if (!localStorage.getItem('token')) {
+      alert('Please login first!');
+      window.location.href = 'login.html';
+    }
+
+    async function uploadResource() {
+      const title       = document.getElementById('title').value.trim();
+      const subject     = document.getElementById('subject').value.trim();
+      const description = document.getElementById('description').value.trim();
+      const fileInput   = document.getElementById('file');
+      const file        = fileInput.files[0];
+
+      if (!title || !subject || !file) {
+        showMessage('Please fill in title, subject and select a file', 'error');
+        return;
+      }
+
+      // FormData is used to send files — regular JSON can't send files
+      const formData = new FormData();
+      formData.append('title', title);
+      formData.append('subject', subject);
+      formData.append('description', description);
+      formData.append('file', file);
+
+      const token = localStorage.getItem('token');
+
+      try {
+        showMessage('Uploading...', 'success');
+
+        const response = await fetch('http://localhost:5000/api/resources/upload', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`
+            // Note: do NOT set Content-Type here — browser sets it automatically for FormData
+          },
+          body: formData
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          showMessage('✅ Resource uploaded successfully!', 'success');
+          // Clear the form
+          document.getElementById('title').value = '';
+          document.getElementById('subject').value = '';
+          document.getElementById('description').value = '';
+          fileInput.value = '';
+        } else {
+          showMessage(data.message, 'error');
+        }
+
+      } catch (error) {
+        showMessage('Cannot connect to server. Is it running?', 'error');
+      }
+    }
+
+    function logout() {
+      localStorage.removeItem('token');
+      localStorage.removeItem('userName');
+      window.location.href = 'login.html';
+    }
+
+    function showMessage(text, type) {
+      const msg = document.getElementById('msg');
+      msg.textContent = text;
+      msg.className = `message ${type}`;
+      msg.style.display = 'block';
+    }
+  </script>
+
+</body>
+</html>

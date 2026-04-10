@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>College Resources</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <nav class="navbar">
+    <h1>🎓 College Resources</h1>
+    <div id="nav-links">
+      <a href="login.html">Login</a>
+      <a href="signup.html">Sign Up</a>
+    </div>
+  </nav>
+
+  <div class="container">
+
+    <!-- Search Bar -->
+    <div class="search-bar">
+      <input type="text" id="searchInput"
+        placeholder="Search by title or subject..." />
+      <button onclick="searchResources()">Search</button>
+      <button onclick="loadResources()"
+        style="background:#6c757d">All</button>
+    </div>
+
+    <!-- Cards will be injected here by JavaScript -->
+    <div class="cards-grid" id="cardsGrid">
+      <div class="empty-state">Loading resources...</div>
+    </div>
+
+  </div>
+
+  <script>
+    const API = 'http://localhost:5000';
+
+    // Show upload link in navbar if logged in
+    window.onload = () => {
+      const token    = localStorage.getItem('token');
+      const userName = localStorage.getItem('userName');
+      const navLinks = document.getElementById('nav-links');
+
+      if (token) {
+        navLinks.innerHTML = `
+          <span style="color:white;margin-right:16px">Hi, ${userName}!</span>
+          <a href="upload.html">Upload</a>
+          <a href="#" onclick="logout()">Logout</a>
+        `;
+      }
+
+      loadResources();
+    };
+
+    // Load all resources from the backend
+    async function loadResources() {
+      try {
+        const response = await fetch(`${API}/api/resources`);
+        const data     = await response.json();
+        renderCards(data.resources);
+      } catch (error) {
+        document.getElementById('cardsGrid').innerHTML =
+          '<div class="empty-state">❌ Cannot connect to server. Is it running?</div>';
+      }
+    }
+
+    // Search resources by keyword
+    async function searchResources() {
+      const keyword = document.getElementById('searchInput').value.trim();
+      if (!keyword) { loadResources(); return; }
+
+      try {
+        const response = await fetch(`${API}/api/resources?search=${keyword}`);
+        const data     = await response.json();
+        renderCards(data.resources);
+      } catch (error) {
+        console.error(error);
+      }
+    }
+
+    // Turn resource data into HTML cards
+    function renderCards(resources) {
+      const grid = document.getElementById('cardsGrid');
+
+      if (!resources || resources.length === 0) {
+        grid.innerHTML = '<div class="empty-state">📭 No resources found.</div>';
+        return;
+      }
+
+      grid.innerHTML = resources.map(r => {
+        const badgeClass = getBadgeClass(r.fileType);
+        const date = new Date(r.uploadedAt).toLocaleDateString('en-IN');
+
+        return `
+          <div class="card">
+            <h3>${r.title}</h3>
+            <span class="badge ${badgeClass}">${r.fileType?.toUpperCase() || 'FILE'}</span>
+            <p>📚 ${r.subject}</p>
+            <p>👤 ${r.uploaderName}</p>
+            <p>📅 ${date}</p>
+            ${r.description ? `<p style="margin-bottom:12px">${r.description}</p>` : ''}
+            <a class="download-btn"
+              href="${API}/api/resources/${r.id}/download">
+              ⬇ Download
+            </a>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function getBadgeClass(type) {
+      if (!type) return 'badge-other';
+      if (type === 'pdf') return 'badge-pdf';
+      if (type === 'ppt' || type === 'pptx') return 'badge-ppt';
+      if (type === 'doc' || type === 'docx') return 'badge-doc';
+      return 'badge-other';
+    }
+
+    function logout() {
+      localStorage.removeItem('token');
+      localStorage.removeItem('userName');
+      window.location.reload();
+    }
+
+    // Allow pressing Enter to search
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('searchInput')
+        .addEventListener('keypress', (e) => {
+          if (e.key === 'Enter') searchResources();
+        });
+    });
+  </script>
+
+</body>
+</html>

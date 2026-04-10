@@ -1,0 +1,12 @@
+# Dependencies — recreated by npm install
+node_modules/
+
+# Secret keys — never share these
+.env
+
+# Uploaded files — too large for GitHub
+uploads/
+
+# OS files
+.DS_Store
+Thumbs.db
